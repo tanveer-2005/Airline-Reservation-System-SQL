@@ -1,0 +1,779 @@
+mysql> CREATE DATABASE Airline_Reservation_System;
+Query OK, 1 row affected (0.08 sec)
+
+mysql> USE Airline_Reservation_System;
+Database changed
+mysql> CREATE TABLE Passengers (
+    ->     Passenger_ID INT PRIMARY KEY AUTO_INCREMENT,
+    ->     First_Name VARCHAR(50) NOT NULL,
+    ->     Last_Name VARCHAR(50) NOT NULL,
+    ->     Gender VARCHAR(10) NOT NULL,
+    ->     Phone VARCHAR(15) NOT NULL UNIQUE,
+    ->     Email EMAIL NOT NULL UNIQUE
+    -> );
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'EMAIL NOT NULL UNIQUE
+)' at line 7
+mysql> CREATE TABLE Passengers (
+    ->     Passenger_ID INT PRIMARY KEY AUTO_INCREMENT,
+    ->     First_Name VARCHAR(50) NOT NULL,
+    ->     Last_Name VARCHAR(50) NOT NULL,
+    ->     Gender VARCHAR(10) NOT NULL CHECK (Gender IN ('Male', 'Female', 'Other')),
+    ->     Phone VARCHAR(15) NOT NULL UNIQUE,
+    ->     Email VARCHAR(100) NOT NULL UNIQUE
+    -> );
+Query OK, 0 rows affected (0.11 sec)
+
+mysql> CREATE TABLE Airlines (
+    ->     Airline_ID INT PRIMARY KEY AUTO_INCREMENT,
+    ->     Airline_Name VARCHAR(100) NOT NULL UNIQUE,
+    ->     Country VARCHAR(50) NOT NULL,
+    ->     Contact VARCHAR(15) NOT NULL
+    -> );
+Query OK, 0 rows affected (0.10 sec)
+
+mysql> CREATE TABLE Airports (
+    ->     Airport_ID INT PRIMARY KEY AUTO_INCREMENT,
+    ->     Airport_Name VARCHAR(100) NOT NULL,
+    ->     City VARCHAR(50) NOT NULL,
+    ->     Country VARCHAR(50) NOT NULL,
+    ->     Airport_Code CHAR(3) NOT NULL UNIQUE
+    -> );
+Query OK, 0 rows affected (0.09 sec)
+
+mysql> CREATE TABLE Aircrafts (
+    ->     Aircraft_ID INT PRIMARY KEY AUTO_INCREMENT,
+    ->     Airline_ID INT NOT NULL,
+    ->     Aircraft_Model VARCHAR(50) NOT NULL,
+    ->     Capacity INT NOT NULL CHECK (Capacity > 0),
+    ->     Manufacturing_Year YEAR NOT NULL,
+    ->
+    ->     FOREIGN KEY (Airline_ID)
+    ->         REFERENCES Airlines(Airline_ID)
+    -> );
+Query OK, 0 rows affected (0.10 sec)
+
+mysql> CREATE TABLE Flights (
+    ->     Flight_ID INT PRIMARY KEY AUTO_INCREMENT,
+    ->     Airline_ID INT NOT NULL,
+    ->     Source_Airport INT NOT NULL,
+    ->     Destination_Airport INT NOT NULL,
+    ->     Departure_Time DATETIME NOT NULL,
+    ->     Arrival_Time DATETIME NOT NULL,
+    ->     Flight_Date DATE NOT NULL,
+    ->     Status VARCHAR(20) NOT NULL DEFAULT 'Scheduled'
+    ->         CHECK (Status IN ('Scheduled', 'Delayed', 'Cancelled', 'Completed')),
+    ->
+    ->     FOREIGN KEY (Airline_ID)
+    ->         REFERENCES Airlines(Airline_ID),
+    ->
+    ->     FOREIGN KEY (Source_Airport)
+    ->         REFERENCES Airports(Airport_ID),
+    ->
+    ->     FOREIGN KEY (Destination_Airport)
+    ->         REFERENCES Airports(Airport_ID),
+    ->
+    ->     CHECK (Source_Airport <> Destination_Airport),
+    ->     CHECK (Arrival_Time > Departure_Time)
+    -> );
+Query OK, 0 rows affected (0.11 sec)
+
+mysql> CREATE TABLE Bookings (
+    ->     Booking_ID INT PRIMARY KEY AUTO_INCREMENT,
+    ->     Passenger_ID INT NOT NULL,
+    ->     Flight_ID INT NOT NULL,
+    ->     Booking_Date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ->     Seat_Number VARCHAR(5) NOT NULL,
+    ->     Class VARCHAR(20) NOT NULL
+    ->         CHECK (Class IN ('Economy', 'Business', 'First')),
+    ->     Booking_Status VARCHAR(20) NOT NULL DEFAULT 'Confirmed'
+    ->         CHECK (Booking_Status IN ('Confirmed', 'Cancelled', 'Pending')),
+    ->
+    ->     FOREIGN KEY (Passenger_ID)
+    ->         REFERENCES Passengers(Passenger_ID),
+    ->
+    ->     FOREIGN KEY (Flight_ID)
+    ->         REFERENCES Flights(Flight_ID),
+    ->
+    ->     UNIQUE (Flight_ID, Seat_Number)
+    -> );
+Query OK, 0 rows affected (0.05 sec)
+
+mysql> CREATE TABLE Payments (
+    ->     Payment_ID INT PRIMARY KEY AUTO_INCREMENT,
+    ->     Booking_ID INT NOT NULL,
+    ->     Payment_Date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ->     Amount DECIMAL(10,2) NOT NULL CHECK (Amount > 0),
+    ->     Payment_Status VARCHAR(20) NOT NULL DEFAULT 'Paid'
+    ->         CHECK (Payment_Status IN ('Paid', 'Pending', 'Failed', 'Refunded')),
+    ->
+    ->     FOREIGN KEY (Booking_ID)
+    ->         REFERENCES Bookings(Booking_ID)
+    -> );
+Query OK, 0 rows affected (0.11 sec)
+
+mysql> CREATE TABLE Crew (
+    ->     Crew_ID INT PRIMARY KEY AUTO_INCREMENT,
+    ->     Flight_ID INT NOT NULL,
+    ->     Crew_Name VARCHAR(100) NOT NULL,
+    ->     Role VARCHAR(30) NOT NULL
+    ->         CHECK (Role IN ('Pilot', 'Co-Pilot', 'Cabin Crew')),
+    ->     Phone VARCHAR(15) NOT NULL,
+    ->     Email VARCHAR(100) UNIQUE,
+    ->
+    ->     FOREIGN KEY (Flight_ID)
+    ->         REFERENCES Flights(Flight_ID)
+    -> );
+Query OK, 0 rows affected (0.10 sec)
+
+mysql> SHOW TABLES;
++--------------------------------------+
+| Tables_in_airline_reservation_system |
++--------------------------------------+
+| aircrafts                            |
+| airlines                             |
+| airports                             |
+| bookings                             |
+| crew                                 |
+| flights                              |
+| passengers                           |
+| payments                             |
++--------------------------------------+
+8 rows in set (0.00 sec)
+
+mysql> INSERT INTO Airlines (Airline_Name, Country, Contact) VALUES
+    -> ('Air India', 'India', '1800123456'),
+    -> ('IndiGo', 'India', '1800183838'),
+    -> ('Emirates', 'UAE', '80077777'),
+    -> ('Qatar Airways', 'Qatar', '800850119'),
+    -> ('Singapore Airlines', 'Singapore', '1800747611'),
+    -> ('British Airways', 'United Kingdom', '1800409267');
+Query OK, 6 rows affected (0.09 sec)
+Records: 6  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO Passengers (First_Name, Last_Name, Gender, Phone, Email) VALUES
+    -> ('Rahul', 'Sharma', 'Male', '9876543210', 'rahul.sharma@gmail.com'),
+    -> ('Priya', 'Patel', 'Female', '9876543211', 'priya.patel@gmail.com'),
+    -> ('Amit', 'Khan', 'Male', '9876543212', 'amit.khan@gmail.com'),
+    -> ('Sneha', 'Joshi', 'Female', '9876543213', 'sneha.joshi@gmail.com'),
+    -> ('Arjun', 'Mehta', 'Male', '9876543214', 'arjun.mehta@gmail.com'),
+    -> ('Neha', 'Desai', 'Female', '9876543215', 'neha.desai@gmail.com'),
+    -> ('Vikram', 'Singh', 'Male', '9876543216', 'vikram.singh@gmail.com'),
+    -> ('Ananya', 'Shah', 'Female', '9876543217', 'ananya.shah@gmail.com'),
+    -> ('Rohan', 'Gupta', 'Male', '9876543218', 'rohan.gupta@gmail.com'),
+    -> ('Kavya', 'Nair', 'Female', '9876543219', 'kavya.nair@gmail.com');
+Query OK, 10 rows affected (0.01 sec)
+Records: 10  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO Airports (Airport_Name, City, Country, Airport_Code) VALUES
+    -> ('Chhatrapati Shivaji Maharaj International Airport', 'Mumbai', 'India', 'BOM'),
+    -> ('Indira Gandhi International Airport', 'Delhi', 'India', 'DEL'),
+    -> ('Kempegowda International Airport', 'Bangalore', 'India', 'BLR'),
+    -> ('Rajiv Gandhi International Airport', 'Hyderabad', 'India', 'HYD'),
+    -> ('Chennai International Airport', 'Chennai', 'India', 'MAA'),
+    -> ('Dubai International Airport', 'Dubai', 'UAE', 'DXB'),
+    -> ('Hamad International Airport', 'Doha', 'Qatar', 'DOH'),
+    -> ('Singapore Changi Airport', 'Singapore', 'Singapore', 'SIN'),
+    -> ('Heathrow Airport', 'London', 'United Kingdom', 'LHR'),
+    -> ('Frankfurt Airport', 'Frankfurt', 'Germany', 'FRA');
+Query OK, 10 rows affected (0.08 sec)
+Records: 10  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO Aircrafts (Airline_ID, Aircraft_Model, Capacity, Manufacturing_Year) VALUES
+    -> (1, 'Airbus A320', 180, 2018),
+    -> (1, 'Boeing 787', 256, 2020),
+    -> (2, 'Airbus A321', 220, 2019),
+    -> (2, 'Airbus A320neo', 186, 2021),
+    -> (3, 'Boeing 777', 396, 2017),
+    -> (3, 'Airbus A380', 525, 2019),
+    -> (4, 'Boeing 787', 254, 2020),
+    -> (5, 'Airbus A350', 325, 2021),
+    -> (6, 'Boeing 777', 336, 2018);
+Query OK, 9 rows affected (0.07 sec)
+Records: 9  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO Flights
+    -> (Airline_ID, Source_Airport, Destination_Airport, Departure_Time, Arrival_Time, Flight_Date, Status)
+    -> VALUES
+    -> (1, 1, 2, '2026-09-01 08:00:00', '2026-09-01 10:15:00', '2026-09-01', 'Scheduled'),
+    ->
+    -> (2, 1, 3, '2026-09-02 09:30:00', '2026-09-02 11:15:00', '2026-09-02', 'Scheduled'),
+    ->
+    -> (1, 2, 4, '2026-09-03 14:00:00', '2026-09-03 16:15:00', '2026-09-03', 'Scheduled'),
+    ->
+    -> (2, 3, 5, '2026-09-04 18:00:00', '2026-09-04 19:30:00', '2026-09-04', 'Scheduled'),
+    ->
+    -> (3, 6, 2, '2026-09-05 22:00:00', '2026-09-06 02:30:00', '2026-09-05', 'Scheduled'),
+    ->
+    -> (4, 6, 7, '2026-09-06 10:00:00', '2026-09-06 11:15:00', '2026-09-06', 'Scheduled'),
+    ->
+    -> (5, 8, 6, '2026-09-07 16:00:00', '2026-09-07 19:30:00', '2026-09-07', 'Scheduled'),
+    ->
+    -> (6, 9, 6, '2026-09-08 12:00:00', '2026-09-08 21:00:00', '2026-09-08', 'Scheduled'),
+    ->
+    -> (1, 2, 1, '2026-09-09 07:30:00', '2026-09-09 09:45:00', '2026-09-09', 'Scheduled'),
+    ->
+    -> (2, 4, 1, '2026-09-10 20:00:00', '2026-09-10 21:45:00', '2026-09-10', 'Scheduled');
+Query OK, 10 rows affected (0.07 sec)
+Records: 10  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO Bookings
+    -> (Passenger_ID, Flight_ID, Booking_Date, Seat_Number, Class, Booking_Status)
+    -> VALUES
+    -> (1, 1, '2026-08-10 10:30:00', '12A', 'Economy', 'Confirmed'),
+    -> (2, 1, '2026-08-11 11:00:00', '12B', 'Economy', 'Confirmed'),
+    -> (3, 2, '2026-08-11 14:30:00', '15C', 'Business', 'Confirmed'),
+    -> (4, 3, '2026-08-12 09:15:00', '08A', 'Economy', 'Confirmed'),
+    -> (5, 4, '2026-08-12 16:20:00', '10B', 'Economy', 'Confirmed'),
+    -> (6, 5, '2026-08-13 12:00:00', '22C', 'Business', 'Confirmed'),
+    -> (7, 6, '2026-08-13 15:45:00', '18A', 'Economy', 'Cancelled'),
+    -> (8, 7, '2026-08-14 10:10:00', '05B', 'First', 'Confirmed'),
+    -> (9, 8, '2026-08-14 13:30:00', '20D', 'Business', 'Confirmed'),
+    -> (10, 9, '2026-08-15 09:00:00', '14A', 'Economy', 'Pending'),
+    -> (1, 10, '2026-08-15 11:30:00', '16C', 'Economy', 'Confirmed'),
+    -> (2, 3, '2026-08-15 14:00:00', '09B', 'Business', 'Confirmed');
+Query OK, 12 rows affected (0.07 sec)
+Records: 12  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO Payments
+    -> (Booking_ID, Payment_Date, Amount, Payment_Status)
+    -> VALUES
+    -> (1, '2026-08-10 10:35:00', 5500.00, 'Paid'),
+    -> (2, '2026-08-11 11:05:00', 5500.00, 'Paid'),
+    -> (3, '2026-08-11 14:35:00', 12000.00, 'Paid'),
+    -> (4, '2026-08-12 09:20:00', 6000.00, 'Paid'),
+    -> (5, '2026-08-12 16:25:00', 4500.00, 'Paid'),
+    -> (6, '2026-08-13 12:05:00', 15000.00, 'Paid'),
+    -> (7, '2026-08-13 15:50:00', 5000.00, 'Refunded'),
+    -> (8, '2026-08-14 10:15:00', 25000.00, 'Paid'),
+    -> (9, '2026-08-14 13:35:00', 18000.00, 'Paid'),
+    -> (10, '2026-08-15 09:05:00', 5000.00, 'Pending'),
+    -> (11, '2026-08-15 11:35:00', 5200.00, 'Paid'),
+    -> (12, '2026-08-15 14:05:00', 11000.00, 'Paid');
+Query OK, 12 rows affected (0.07 sec)
+Records: 12  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO Crew
+    -> (Flight_ID, Crew_Name, Role, Phone, Email)
+    -> VALUES
+    -> (1, 'Rajiv Kapoor', 'Pilot', '9000000001', 'rajiv.kapoor@airline.com'),
+    -> (1, 'Meera Rao', 'Co-Pilot', '9000000002', 'meera.rao@airline.com'),
+    -> (1, 'Pooja Verma', 'Cabin Crew', '9000000003', 'pooja.verma@airline.com'),
+    ->
+    -> (2, 'Sanjay Malhotra', 'Pilot', '9000000004', 'sanjay.malhotra@airline.com'),
+    -> (2, 'Nisha Kapoor', 'Cabin Crew', '9000000005', 'nisha.kapoor@airline.com'),
+    ->
+    -> (3, 'Aakash Sharma', 'Pilot', '9000000006', 'aakash.sharma@airline.com'),
+    -> (3, 'Ritu Singh', 'Co-Pilot', '9000000007', 'ritu.singh@airline.com'),
+    ->
+    -> (4, 'Vivek Patil', 'Pilot', '9000000008', 'vivek.patil@airline.com'),
+    -> (4, 'Simran Kaur', 'Cabin Crew', '9000000009', 'simran.kaur@airline.com'),
+    ->
+    -> (5, 'Daniel Thomas', 'Pilot', '9000000010', 'daniel.thomas@airline.com'),
+    -> (6, 'Ahmed Hassan', 'Pilot', '9000000011', 'ahmed.hassan@airline.com'),
+    -> (7, 'Michael Tan', 'Pilot', '9000000012', 'michael.tan@airline.com'),
+    -> (8, 'James Wilson', 'Pilot', '9000000013', 'james.wilson@airline.com');
+Query OK, 13 rows affected (0.07 sec)
+Records: 13  Duplicates: 0  Warnings: 0
+
+mysql> SELECT * FROM Airlines;
++------------+--------------------+----------------+------------+
+| Airline_ID | Airline_Name       | Country        | Contact    |
++------------+--------------------+----------------+------------+
+|          1 | Air India          | India          | 1800123456 |
+|          2 | IndiGo             | India          | 1800183838 |
+|          3 | Emirates           | UAE            | 80077777   |
+|          4 | Qatar Airways      | Qatar          | 800850119  |
+|          5 | Singapore Airlines | Singapore      | 1800747611 |
+|          6 | British Airways    | United Kingdom | 1800409267 |
++------------+--------------------+----------------+------------+
+6 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Passengers;
++--------------+------------+-----------+--------+------------+------------------------+
+| Passenger_ID | First_Name | Last_Name | Gender | Phone      | Email                  |
++--------------+------------+-----------+--------+------------+------------------------+
+|            1 | Rahul      | Sharma    | Male   | 9876543210 | rahul.sharma@gmail.com |
+|            2 | Priya      | Patel     | Female | 9876543211 | priya.patel@gmail.com  |
+|            3 | Amit       | Khan      | Male   | 9876543212 | amit.khan@gmail.com    |
+|            4 | Sneha      | Joshi     | Female | 9876543213 | sneha.joshi@gmail.com  |
+|            5 | Arjun      | Mehta     | Male   | 9876543214 | arjun.mehta@gmail.com  |
+|            6 | Neha       | Desai     | Female | 9876543215 | neha.desai@gmail.com   |
+|            7 | Vikram     | Singh     | Male   | 9876543216 | vikram.singh@gmail.com |
+|            8 | Ananya     | Shah      | Female | 9876543217 | ananya.shah@gmail.com  |
+|            9 | Rohan      | Gupta     | Male   | 9876543218 | rohan.gupta@gmail.com  |
+|           10 | Kavya      | Nair      | Female | 9876543219 | kavya.nair@gmail.com   |
++--------------+------------+-----------+--------+------------+------------------------+
+10 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Airports;
++------------+---------------------------------------------------+-----------+----------------+--------------+
+| Airport_ID | Airport_Name                                      | City      | Country        | Airport_Code |
++------------+---------------------------------------------------+-----------+----------------+--------------+
+|          1 | Chhatrapati Shivaji Maharaj International Airport | Mumbai    | India          | BOM          |
+|          2 | Indira Gandhi International Airport               | Delhi     | India          | DEL          |
+|          3 | Kempegowda International Airport                  | Bangalore | India          | BLR          |
+|          4 | Rajiv Gandhi International Airport                | Hyderabad | India          | HYD          |
+|          5 | Chennai International Airport                     | Chennai   | India          | MAA          |
+|          6 | Dubai International Airport                       | Dubai     | UAE            | DXB          |
+|          7 | Hamad International Airport                       | Doha      | Qatar          | DOH          |
+|          8 | Singapore Changi Airport                          | Singapore | Singapore      | SIN          |
+|          9 | Heathrow Airport                                  | London    | United Kingdom | LHR          |
+|         10 | Frankfurt Airport                                 | Frankfurt | Germany        | FRA          |
++------------+---------------------------------------------------+-----------+----------------+--------------+
+10 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Aircrafts;
++-------------+------------+----------------+----------+--------------------+
+| Aircraft_ID | Airline_ID | Aircraft_Model | Capacity | Manufacturing_Year |
++-------------+------------+----------------+----------+--------------------+
+|           1 |          1 | Airbus A320    |      180 |               2018 |
+|           2 |          1 | Boeing 787     |      256 |               2020 |
+|           3 |          2 | Airbus A321    |      220 |               2019 |
+|           4 |          2 | Airbus A320neo |      186 |               2021 |
+|           5 |          3 | Boeing 777     |      396 |               2017 |
+|           6 |          3 | Airbus A380    |      525 |               2019 |
+|           7 |          4 | Boeing 787     |      254 |               2020 |
+|           8 |          5 | Airbus A350    |      325 |               2021 |
+|           9 |          6 | Boeing 777     |      336 |               2018 |
++-------------+------------+----------------+----------+--------------------+
+9 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Flights;
++-----------+------------+----------------+---------------------+---------------------+---------------------+-------------+-----------+
+| Flight_ID | Airline_ID | Source_Airport | Destination_Airport | Departure_Time      | Arrival_Time        | Flight_Date | Status    |
++-----------+------------+----------------+---------------------+---------------------+---------------------+-------------+-----------+
+|         1 |          1 |              1 |                   2 | 2026-09-01 08:00:00 | 2026-09-01 10:15:00 | 2026-09-01  | Scheduled |
+|         2 |          2 |              1 |                   3 | 2026-09-02 09:30:00 | 2026-09-02 11:15:00 | 2026-09-02  | Scheduled |
+|         3 |          1 |              2 |                   4 | 2026-09-03 14:00:00 | 2026-09-03 16:15:00 | 2026-09-03  | Scheduled |
+|         4 |          2 |              3 |                   5 | 2026-09-04 18:00:00 | 2026-09-04 19:30:00 | 2026-09-04  | Scheduled |
+|         5 |          3 |              6 |                   2 | 2026-09-05 22:00:00 | 2026-09-06 02:30:00 | 2026-09-05  | Scheduled |
+|         6 |          4 |              6 |                   7 | 2026-09-06 10:00:00 | 2026-09-06 11:15:00 | 2026-09-06  | Scheduled |
+|         7 |          5 |              8 |                   6 | 2026-09-07 16:00:00 | 2026-09-07 19:30:00 | 2026-09-07  | Scheduled |
+|         8 |          6 |              9 |                   6 | 2026-09-08 12:00:00 | 2026-09-08 21:00:00 | 2026-09-08  | Scheduled |
+|         9 |          1 |              2 |                   1 | 2026-09-09 07:30:00 | 2026-09-09 09:45:00 | 2026-09-09  | Scheduled |
+|        10 |          2 |              4 |                   1 | 2026-09-10 20:00:00 | 2026-09-10 21:45:00 | 2026-09-10  | Scheduled |
++-----------+------------+----------------+---------------------+---------------------+---------------------+-------------+-----------+
+10 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Bookings;
++------------+--------------+-----------+---------------------+-------------+----------+----------------+
+| Booking_ID | Passenger_ID | Flight_ID | Booking_Date        | Seat_Number | Class    | Booking_Status |
++------------+--------------+-----------+---------------------+-------------+----------+----------------+
+|          1 |            1 |         1 | 2026-08-10 10:30:00 | 12A         | Economy  | Confirmed      |
+|          2 |            2 |         1 | 2026-08-11 11:00:00 | 12B         | Economy  | Confirmed      |
+|          3 |            3 |         2 | 2026-08-11 14:30:00 | 15C         | Business | Confirmed      |
+|          4 |            4 |         3 | 2026-08-12 09:15:00 | 08A         | Economy  | Confirmed      |
+|          5 |            5 |         4 | 2026-08-12 16:20:00 | 10B         | Economy  | Confirmed      |
+|          6 |            6 |         5 | 2026-08-13 12:00:00 | 22C         | Business | Confirmed      |
+|          7 |            7 |         6 | 2026-08-13 15:45:00 | 18A         | Economy  | Cancelled      |
+|          8 |            8 |         7 | 2026-08-14 10:10:00 | 05B         | First    | Confirmed      |
+|          9 |            9 |         8 | 2026-08-14 13:30:00 | 20D         | Business | Confirmed      |
+|         10 |           10 |         9 | 2026-08-15 09:00:00 | 14A         | Economy  | Pending        |
+|         11 |            1 |        10 | 2026-08-15 11:30:00 | 16C         | Economy  | Confirmed      |
+|         12 |            2 |         3 | 2026-08-15 14:00:00 | 09B         | Business | Confirmed      |
++------------+--------------+-----------+---------------------+-------------+----------+----------------+
+12 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Payments;
++------------+------------+---------------------+----------+----------------+
+| Payment_ID | Booking_ID | Payment_Date        | Amount   | Payment_Status |
++------------+------------+---------------------+----------+----------------+
+|          1 |          1 | 2026-08-10 10:35:00 |  5500.00 | Paid           |
+|          2 |          2 | 2026-08-11 11:05:00 |  5500.00 | Paid           |
+|          3 |          3 | 2026-08-11 14:35:00 | 12000.00 | Paid           |
+|          4 |          4 | 2026-08-12 09:20:00 |  6000.00 | Paid           |
+|          5 |          5 | 2026-08-12 16:25:00 |  4500.00 | Paid           |
+|          6 |          6 | 2026-08-13 12:05:00 | 15000.00 | Paid           |
+|          7 |          7 | 2026-08-13 15:50:00 |  5000.00 | Refunded       |
+|          8 |          8 | 2026-08-14 10:15:00 | 25000.00 | Paid           |
+|          9 |          9 | 2026-08-14 13:35:00 | 18000.00 | Paid           |
+|         10 |         10 | 2026-08-15 09:05:00 |  5000.00 | Pending        |
+|         11 |         11 | 2026-08-15 11:35:00 |  5200.00 | Paid           |
+|         12 |         12 | 2026-08-15 14:05:00 | 11000.00 | Paid           |
++------------+------------+---------------------+----------+----------------+
+12 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Crew;
++---------+-----------+-----------------+------------+------------+-----------------------------+
+| Crew_ID | Flight_ID | Crew_Name       | Role       | Phone      | Email                       |
++---------+-----------+-----------------+------------+------------+-----------------------------+
+|       1 |         1 | Rajiv Kapoor    | Pilot      | 9000000001 | rajiv.kapoor@airline.com    |
+|       2 |         1 | Meera Rao       | Co-Pilot   | 9000000002 | meera.rao@airline.com       |
+|       3 |         1 | Pooja Verma     | Cabin Crew | 9000000003 | pooja.verma@airline.com     |
+|       4 |         2 | Sanjay Malhotra | Pilot      | 9000000004 | sanjay.malhotra@airline.com |
+|       5 |         2 | Nisha Kapoor    | Cabin Crew | 9000000005 | nisha.kapoor@airline.com    |
+|       6 |         3 | Aakash Sharma   | Pilot      | 9000000006 | aakash.sharma@airline.com   |
+|       7 |         3 | Ritu Singh      | Co-Pilot   | 9000000007 | ritu.singh@airline.com      |
+|       8 |         4 | Vivek Patil     | Pilot      | 9000000008 | vivek.patil@airline.com     |
+|       9 |         4 | Simran Kaur     | Cabin Crew | 9000000009 | simran.kaur@airline.com     |
+|      10 |         5 | Daniel Thomas   | Pilot      | 9000000010 | daniel.thomas@airline.com   |
+|      11 |         6 | Ahmed Hassan    | Pilot      | 9000000011 | ahmed.hassan@airline.com    |
+|      12 |         7 | Michael Tan     | Pilot      | 9000000012 | michael.tan@airline.com     |
+|      13 |         8 | James Wilson    | Pilot      | 9000000013 | james.wilson@airline.com    |
++---------+-----------+-----------------+------------+------------+-----------------------------+
+13 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Passengers WHERE Gender = 'Female';
++--------------+------------+-----------+--------+------------+-----------------------+
+| Passenger_ID | First_Name | Last_Name | Gender | Phone      | Email                 |
++--------------+------------+-----------+--------+------------+-----------------------+
+|            2 | Priya      | Patel     | Female | 9876543211 | priya.patel@gmail.com |
+|            4 | Sneha      | Joshi     | Female | 9876543213 | sneha.joshi@gmail.com |
+|            6 | Neha       | Desai     | Female | 9876543215 | neha.desai@gmail.com  |
+|            8 | Ananya     | Shah      | Female | 9876543217 | ananya.shah@gmail.com |
+|           10 | Kavya      | Nair      | Female | 9876543219 | kavya.nair@gmail.com  |
++--------------+------------+-----------+--------+------------+-----------------------+
+5 rows in set (0.04 sec)
+
+mysql> SELECT * FROM Flights WHERE Status = 'Scheduled';
++-----------+------------+----------------+---------------------+---------------------+---------------------+-------------+-----------+
+| Flight_ID | Airline_ID | Source_Airport | Destination_Airport | Departure_Time      | Arrival_Time        | Flight_Date | Status    |
++-----------+------------+----------------+---------------------+---------------------+---------------------+-------------+-----------+
+|         1 |          1 |              1 |                   2 | 2026-09-01 08:00:00 | 2026-09-01 10:15:00 | 2026-09-01  | Scheduled |
+|         2 |          2 |              1 |                   3 | 2026-09-02 09:30:00 | 2026-09-02 11:15:00 | 2026-09-02  | Scheduled |
+|         3 |          1 |              2 |                   4 | 2026-09-03 14:00:00 | 2026-09-03 16:15:00 | 2026-09-03  | Scheduled |
+|         4 |          2 |              3 |                   5 | 2026-09-04 18:00:00 | 2026-09-04 19:30:00 | 2026-09-04  | Scheduled |
+|         5 |          3 |              6 |                   2 | 2026-09-05 22:00:00 | 2026-09-06 02:30:00 | 2026-09-05  | Scheduled |
+|         6 |          4 |              6 |                   7 | 2026-09-06 10:00:00 | 2026-09-06 11:15:00 | 2026-09-06  | Scheduled |
+|         7 |          5 |              8 |                   6 | 2026-09-07 16:00:00 | 2026-09-07 19:30:00 | 2026-09-07  | Scheduled |
+|         8 |          6 |              9 |                   6 | 2026-09-08 12:00:00 | 2026-09-08 21:00:00 | 2026-09-08  | Scheduled |
+|         9 |          1 |              2 |                   1 | 2026-09-09 07:30:00 | 2026-09-09 09:45:00 | 2026-09-09  | Scheduled |
+|        10 |          2 |              4 |                   1 | 2026-09-10 20:00:00 | 2026-09-10 21:45:00 | 2026-09-10  | Scheduled |
++-----------+------------+----------------+---------------------+---------------------+---------------------+-------------+-----------+
+10 rows in set (0.01 sec)
+
+mysql> SELECT * FROM Bookings WHERE Booking_Status = 'Confirmed';
++------------+--------------+-----------+---------------------+-------------+----------+----------------+
+| Booking_ID | Passenger_ID | Flight_ID | Booking_Date        | Seat_Number | Class    | Booking_Status |
++------------+--------------+-----------+---------------------+-------------+----------+----------------+
+|          1 |            1 |         1 | 2026-08-10 10:30:00 | 12A         | Economy  | Confirmed      |
+|          2 |            2 |         1 | 2026-08-11 11:00:00 | 12B         | Economy  | Confirmed      |
+|          3 |            3 |         2 | 2026-08-11 14:30:00 | 15C         | Business | Confirmed      |
+|          4 |            4 |         3 | 2026-08-12 09:15:00 | 08A         | Economy  | Confirmed      |
+|          5 |            5 |         4 | 2026-08-12 16:20:00 | 10B         | Economy  | Confirmed      |
+|          6 |            6 |         5 | 2026-08-13 12:00:00 | 22C         | Business | Confirmed      |
+|          8 |            8 |         7 | 2026-08-14 10:10:00 | 05B         | First    | Confirmed      |
+|          9 |            9 |         8 | 2026-08-14 13:30:00 | 20D         | Business | Confirmed      |
+|         11 |            1 |        10 | 2026-08-15 11:30:00 | 16C         | Economy  | Confirmed      |
+|         12 |            2 |         3 | 2026-08-15 14:00:00 | 09B         | Business | Confirmed      |
++------------+--------------+-----------+---------------------+-------------+----------+----------------+
+10 rows in set (0.01 sec)
+
+mysql> SELECT * FROM Passengers WHERE First_Name LIKE 'A%';
++--------------+------------+-----------+--------+------------+-----------------------+
+| Passenger_ID | First_Name | Last_Name | Gender | Phone      | Email                 |
++--------------+------------+-----------+--------+------------+-----------------------+
+|            3 | Amit       | Khan      | Male   | 9876543212 | amit.khan@gmail.com   |
+|            5 | Arjun      | Mehta     | Male   | 9876543214 | arjun.mehta@gmail.com |
+|            8 | Ananya     | Shah      | Female | 9876543217 | ananya.shah@gmail.com |
++--------------+------------+-----------+--------+------------+-----------------------+
+3 rows in set (0.01 sec)
+
+mysql> SELECT F.Flight_ID, A.Airport_Name, A.City AS Departure_City,  F.Destination_Airport, F.Departure_Time,   F.Arrival_Time,F.Status FROM Flights F JOIN Airports A ON F.Source_Airport = A.Airport_ID WHERE A.City = 'Mumbai';
++-----------+---------------------------------------------------+----------------+---------------------+---------------------+---------------------+-----------+
+| Flight_ID | Airport_Name                                      | Departure_City | Destination_Airport | Departure_Time      | Arrival_Time        | Status    |
++-----------+---------------------------------------------------+----------------+---------------------+---------------------+---------------------+-----------+
+|         1 | Chhatrapati Shivaji Maharaj International Airport | Mumbai         |                   2 | 2026-09-01 08:00:00 | 2026-09-01 10:15:00 | Scheduled |
+|         2 | Chhatrapati Shivaji Maharaj International Airport | Mumbai         |                   3 | 2026-09-02 09:30:00 | 2026-09-02 11:15:00 | Scheduled |
++-----------+---------------------------------------------------+----------------+---------------------+---------------------+---------------------+-----------+
+2 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Passengers ORDER BY First_Name;
++--------------+------------+-----------+--------+------------+------------------------+
+| Passenger_ID | First_Name | Last_Name | Gender | Phone      | Email                  |
++--------------+------------+-----------+--------+------------+------------------------+
+|            3 | Amit       | Khan      | Male   | 9876543212 | amit.khan@gmail.com    |
+|            8 | Ananya     | Shah      | Female | 9876543217 | ananya.shah@gmail.com  |
+|            5 | Arjun      | Mehta     | Male   | 9876543214 | arjun.mehta@gmail.com  |
+|           10 | Kavya      | Nair      | Female | 9876543219 | kavya.nair@gmail.com   |
+|            6 | Neha       | Desai     | Female | 9876543215 | neha.desai@gmail.com   |
+|            2 | Priya      | Patel     | Female | 9876543211 | priya.patel@gmail.com  |
+|            1 | Rahul      | Sharma    | Male   | 9876543210 | rahul.sharma@gmail.com |
+|            9 | Rohan      | Gupta     | Male   | 9876543218 | rohan.gupta@gmail.com  |
+|            4 | Sneha      | Joshi     | Female | 9876543213 | sneha.joshi@gmail.com  |
+|            7 | Vikram     | Singh     | Male   | 9876543216 | vikram.singh@gmail.com |
++--------------+------------+-----------+--------+------------+------------------------+
+10 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Flights ORDER BY Departure_Time;
++-----------+------------+----------------+---------------------+---------------------+---------------------+-------------+-----------+
+| Flight_ID | Airline_ID | Source_Airport | Destination_Airport | Departure_Time      | Arrival_Time        | Flight_Date | Status    |
++-----------+------------+----------------+---------------------+---------------------+---------------------+-------------+-----------+
+|         1 |          1 |              1 |                   2 | 2026-09-01 08:00:00 | 2026-09-01 10:15:00 | 2026-09-01  | Scheduled |
+|         2 |          2 |              1 |                   3 | 2026-09-02 09:30:00 | 2026-09-02 11:15:00 | 2026-09-02  | Scheduled |
+|         3 |          1 |              2 |                   4 | 2026-09-03 14:00:00 | 2026-09-03 16:15:00 | 2026-09-03  | Scheduled |
+|         4 |          2 |              3 |                   5 | 2026-09-04 18:00:00 | 2026-09-04 19:30:00 | 2026-09-04  | Scheduled |
+|         5 |          3 |              6 |                   2 | 2026-09-05 22:00:00 | 2026-09-06 02:30:00 | 2026-09-05  | Scheduled |
+|         6 |          4 |              6 |                   7 | 2026-09-06 10:00:00 | 2026-09-06 11:15:00 | 2026-09-06  | Scheduled |
+|         7 |          5 |              8 |                   6 | 2026-09-07 16:00:00 | 2026-09-07 19:30:00 | 2026-09-07  | Scheduled |
+|         8 |          6 |              9 |                   6 | 2026-09-08 12:00:00 | 2026-09-08 21:00:00 | 2026-09-08  | Scheduled |
+|         9 |          1 |              2 |                   1 | 2026-09-09 07:30:00 | 2026-09-09 09:45:00 | 2026-09-09  | Scheduled |
+|        10 |          2 |              4 |                   1 | 2026-09-10 20:00:00 | 2026-09-10 21:45:00 | 2026-09-10  | Scheduled |
++-----------+------------+----------------+---------------------+---------------------+---------------------+-------------+-----------+
+10 rows in set (0.00 sec)
+
+mysql> SELECT F.Flight_ID, A.Aircraft_Model, A.Capacity FROM Flights F JOIN Aircrafts A ON A.Airline_ID = F.Airline_ID WHERE A.Capacity > 250;
++-----------+----------------+----------+
+| Flight_ID | Aircraft_Model | Capacity |
++-----------+----------------+----------+
+|         1 | Boeing 787     |      256 |
+|         3 | Boeing 787     |      256 |
+|         9 | Boeing 787     |      256 |
+|         5 | Boeing 777     |      396 |
+|         5 | Airbus A380    |      525 |
+|         6 | Boeing 787     |      254 |
+|         7 | Airbus A350    |      325 |
+|         8 | Boeing 777     |      336 |
++-----------+----------------+----------+
+8 rows in set (0.01 sec)
+
+mysql> SELECT * FROM Payments WHERE Amount > 10000;
++------------+------------+---------------------+----------+----------------+
+| Payment_ID | Booking_ID | Payment_Date        | Amount   | Payment_Status |
++------------+------------+---------------------+----------+----------------+
+|          3 |          3 | 2026-08-11 14:35:00 | 12000.00 | Paid           |
+|          6 |          6 | 2026-08-13 12:05:00 | 15000.00 | Paid           |
+|          8 |          8 | 2026-08-14 10:15:00 | 25000.00 | Paid           |
+|          9 |          9 | 2026-08-14 13:35:00 | 18000.00 | Paid           |
+|         12 |         12 | 2026-08-15 14:05:00 | 11000.00 | Paid           |
++------------+------------+---------------------+----------+----------------+
+5 rows in set (0.03 sec)
+
+mysql> SELECT * FROM Flights WHERE Flight_Date BETWEEN '2026-09-01' AND '2026-09-05';
++-----------+------------+----------------+---------------------+---------------------+---------------------+-------------+-----------+
+| Flight_ID | Airline_ID | Source_Airport | Destination_Airport | Departure_Time      | Arrival_Time        | Flight_Date | Status    |
++-----------+------------+----------------+---------------------+---------------------+---------------------+-------------+-----------+
+|         1 |          1 |              1 |                   2 | 2026-09-01 08:00:00 | 2026-09-01 10:15:00 | 2026-09-01  | Scheduled |
+|         2 |          2 |              1 |                   3 | 2026-09-02 09:30:00 | 2026-09-02 11:15:00 | 2026-09-02  | Scheduled |
+|         3 |          1 |              2 |                   4 | 2026-09-03 14:00:00 | 2026-09-03 16:15:00 | 2026-09-03  | Scheduled |
+|         4 |          2 |              3 |                   5 | 2026-09-04 18:00:00 | 2026-09-04 19:30:00 | 2026-09-04  | Scheduled |
+|         5 |          3 |              6 |                   2 | 2026-09-05 22:00:00 | 2026-09-06 02:30:00 | 2026-09-05  | Scheduled |
++-----------+------------+----------------+---------------------+---------------------+---------------------+-------------+-----------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT COUNT(*) AS TOTAL_BOOKINGS FROM Bookings;
++----------------+
+| TOTAL_BOOKINGS |
++----------------+
+|             12 |
++----------------+
+1 row in set (0.03 sec)
+
+mysql> SELECT SUM(Amount) AS Total_Payment FROM Payments;
++---------------+
+| Total_Payment |
++---------------+
+|     117700.00 |
++---------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT AVG(Amount) AS Average_Payment FROM Payments;
++-----------------+
+| Average_Payment |
++-----------------+
+|     9808.333333 |
++-----------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT MAX(Amount) AS Maximum_Payment FROM Payments;
++-----------------+
+| Maximum_Payment |
++-----------------+
+|        25000.00 |
++-----------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT MIN(Amount) AS Minimum_Payment FROM Payments;
++-----------------+
+| Minimum_Payment |
++-----------------+
+|         4500.00 |
++-----------------+
+1 row in set (0.03 sec)
+
+mysql> SELECT Booking_Status, COUNT(*) AS Total_Bookings FROM Bookings GROUP BY Booking_Status;
++----------------+----------------+
+| Booking_Status | Total_Bookings |
++----------------+----------------+
+| Confirmed      |             10 |
+| Cancelled      |              1 |
+| Pending        |              1 |
++----------------+----------------+
+3 rows in set (0.03 sec)
+
+mysql> SELECT GENDER, COUNT(*) AS Total_Number FROM Passengers GROUP BY GENDER;
++--------+--------------+
+| GENDER | Total_Number |
++--------+--------------+
+| Male   |            5 |
+| Female |            5 |
++--------+--------------+
+2 rows in set (0.00 sec)
+
+mysql> SELECT Airline_ID , COUNT(*) AS Total_Flights FROM Flights GROUP BY Airline_ID;
++------------+---------------+
+| Airline_ID | Total_Flights |
++------------+---------------+
+|          1 |             3 |
+|          2 |             3 |
+|          3 |             1 |
+|          4 |             1 |
+|          5 |             1 |
+|          6 |             1 |
++------------+---------------+
+6 rows in set (0.00 sec)
+
+mysql> SELECT Class, COUNT(*) AS TOTAL_BOOKINGS FROM Bookings GROUP BY Class;
++----------+----------------+
+| Class    | TOTAL_BOOKINGS |
++----------+----------------+
+| Economy  |              7 |
+| Business |              4 |
+| First    |              1 |
++----------+----------------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT  F.Airline_ID, SUM(P.Amount) AS Total_Revenue FROM Flights F JOIN Bookings B ON F.Flight_ID = B.Flight_ID JOIN Payments P ON B.Booking_ID = P.Booking_ID WHERE P.Payment_Status = 'Paid' GROUP BY F.Airline_ID;
++------------+---------------+
+| Airline_ID | Total_Revenue |
++------------+---------------+
+|          1 |      28000.00 |
+|          2 |      21700.00 |
+|          3 |      15000.00 |
+|          5 |      25000.00 |
+|          6 |      18000.00 |
++------------+---------------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT Flight_ID , COUNT(*) As Total_Crew FROM Crew GROUP BY Flight_ID;
++-----------+------------+
+| Flight_ID | Total_Crew |
++-----------+------------+
+|         1 |          3 |
+|         2 |          2 |
+|         3 |          2 |
+|         4 |          2 |
+|         5 |          1 |
+|         6 |          1 |
+|         7 |          1 |
+|         8 |          1 |
++-----------+------------+
+8 rows in set (0.00 sec)
+
+mysql> SELECT CONCAT(P.First_Name,' ',P.Last_Name) AS Passanger_Name , B.Flight_ID, B.Seat_Number FROM Passengers P JOIN Bookings B ON P.Passenger_ID = B.Passenger_ID;
++----------------+-----------+-------------+
+| Passanger_Name | Flight_ID | Seat_Number |
++----------------+-----------+-------------+
+| Rahul Sharma   |         1 | 12A         |
+| Rahul Sharma   |        10 | 16C         |
+| Priya Patel    |         1 | 12B         |
+| Priya Patel    |         3 | 09B         |
+| Amit Khan      |         2 | 15C         |
+| Sneha Joshi    |         3 | 08A         |
+| Arjun Mehta    |         4 | 10B         |
+| Neha Desai     |         5 | 22C         |
+| Vikram Singh   |         6 | 18A         |
+| Ananya Shah    |         7 | 05B         |
+| Rohan Gupta    |         8 | 20D         |
+| Kavya Nair     |         9 | 14A         |
++----------------+-----------+-------------+
+12 rows in set (0.01 sec)
+
+mysql> SELECT CONCAT(P.First_Name,' ',P.Last_Name) AS Passanger_Name , A.Airline_Name FROM Passengers P JOIN Bookings B ON P.Passenger_ID = B.Passenger_ID JOIN Flights F ON B.Flight_ID = F.Flight_ID JOIN Airlines A ON F.Airline_ID = A.Airline_ID;
++----------------+--------------------+
+| Passanger_Name | Airline_Name       |
++----------------+--------------------+
+| Rahul Sharma   | Air India          |
+| Priya Patel    | Air India          |
+| Sneha Joshi    | Air India          |
+| Priya Patel    | Air India          |
+| Kavya Nair     | Air India          |
+| Rohan Gupta    | British Airways    |
+| Neha Desai     | Emirates           |
+| Amit Khan      | IndiGo             |
+| Arjun Mehta    | IndiGo             |
+| Rahul Sharma   | IndiGo             |
+| Vikram Singh   | Qatar Airways      |
+| Ananya Shah    | Singapore Airlines |
++----------------+--------------------+
+12 rows in set (0.00 sec)
+
+mysql> SELECT CONCAT(P.First_Name,' ',P.Last_Name) AS Passanger_Name , B.Flight_ID, B.Booking_Status FROM Passengers P JOIN Bookings B ON P.Passenger_ID = B.Passenger_ID;
++----------------+-----------+----------------+
+| Passanger_Name | Flight_ID | Booking_Status |
++----------------+-----------+----------------+
+| Rahul Sharma   |         1 | Confirmed      |
+| Rahul Sharma   |        10 | Confirmed      |
+| Priya Patel    |         1 | Confirmed      |
+| Priya Patel    |         3 | Confirmed      |
+| Amit Khan      |         2 | Confirmed      |
+| Sneha Joshi    |         3 | Confirmed      |
+| Arjun Mehta    |         4 | Confirmed      |
+| Neha Desai     |         5 | Confirmed      |
+| Vikram Singh   |         6 | Cancelled      |
+| Ananya Shah    |         7 | Confirmed      |
+| Rohan Gupta    |         8 | Confirmed      |
+| Kavya Nair     |         9 | Pending        |
++----------------+-----------+----------------+
+12 rows in set (0.00 sec)
+
+mysql> SELECT F.Flight_ID, A.Airline_Name, Source.City AS Source_City, Destination.City AS Destination_City FROM Flights F JOIN Airlines A  ON F.Airline_ID = A.Airline_ID JOIN Airports Source ON F.Source_Airport = Source.Airport_ID JOIN Airports Destination ON F.Destination_Airport = Destination.Airport_ID;
++-----------+--------------------+-------------+------------------+
+| Flight_ID | Airline_Name       | Source_City | Destination_City |
++-----------+--------------------+-------------+------------------+
+|         1 | Air India          | Mumbai      | Delhi            |
+|         3 | Air India          | Delhi       | Hyderabad        |
+|         9 | Air India          | Delhi       | Mumbai           |
+|         8 | British Airways    | London      | Dubai            |
+|         5 | Emirates           | Dubai       | Delhi            |
+|         2 | IndiGo             | Mumbai      | Bangalore        |
+|         4 | IndiGo             | Bangalore   | Chennai          |
+|        10 | IndiGo             | Hyderabad   | Mumbai           |
+|         6 | Qatar Airways      | Dubai       | Doha             |
+|         7 | Singapore Airlines | Singapore   | Dubai            |
++-----------+--------------------+-------------+------------------+
+10 rows in set (0.00 sec)
+
+mysql> SELECT B.Booking_ID, CONCAT(P.First_Name, ' ', P.Last_Name) AS Passenger_Name, F.Flight_ID, A.Airline_Name, B.Seat_Number, B.Class, B.Booking_Date, B.Booking_Status, Pay.Amount, Pay.Payment_Status FROM Bookings B JOIN Passengers P ON B.Passenger_ID = P.Passenger_ID JOIN Flights F ON B.Flight_ID = F.Flight_ID JOIN Airlines A ON F.Airline_ID = A.Airline_ID JOIN Payments Pay ON B.Booking_ID = Pay.Booking_ID;
++------------+----------------+-----------+--------------------+-------------+----------+---------------------+----------------+----------+----------------+
+| Booking_ID | Passenger_Name | Flight_ID | Airline_Name       | Seat_Number | Class    | Booking_Date        | Booking_Status | Amount   | Payment_Status |
++------------+----------------+-----------+--------------------+-------------+----------+---------------------+----------------+----------+----------------+
+|          1 | Rahul Sharma   |         1 | Air India          | 12A         | Economy  | 2026-08-10 10:30:00 | Confirmed      |  5500.00 | Paid           |
+|          2 | Priya Patel    |         1 | Air India          | 12B         | Economy  | 2026-08-11 11:00:00 | Confirmed      |  5500.00 | Paid           |
+|          4 | Sneha Joshi    |         3 | Air India          | 08A         | Economy  | 2026-08-12 09:15:00 | Confirmed      |  6000.00 | Paid           |
+|         12 | Priya Patel    |         3 | Air India          | 09B         | Business | 2026-08-15 14:00:00 | Confirmed      | 11000.00 | Paid           |
+|         10 | Kavya Nair     |         9 | Air India          | 14A         | Economy  | 2026-08-15 09:00:00 | Pending        |  5000.00 | Pending        |
+|          9 | Rohan Gupta    |         8 | British Airways    | 20D         | Business | 2026-08-14 13:30:00 | Confirmed      | 18000.00 | Paid           |
+|          6 | Neha Desai     |         5 | Emirates           | 22C         | Business | 2026-08-13 12:00:00 | Confirmed      | 15000.00 | Paid           |
+|          3 | Amit Khan      |         2 | IndiGo             | 15C         | Business | 2026-08-11 14:30:00 | Confirmed      | 12000.00 | Paid           |
+|          5 | Arjun Mehta    |         4 | IndiGo             | 10B         | Economy  | 2026-08-12 16:20:00 | Confirmed      |  4500.00 | Paid           |
+|         11 | Rahul Sharma   |        10 | IndiGo             | 16C         | Economy  | 2026-08-15 11:30:00 | Confirmed      |  5200.00 | Paid           |
+|          7 | Vikram Singh   |         6 | Qatar Airways      | 18A         | Economy  | 2026-08-13 15:45:00 | Cancelled      |  5000.00 | Refunded       |
+|          8 | Ananya Shah    |         7 | Singapore Airlines | 05B         | First    | 2026-08-14 10:10:00 | Confirmed      | 25000.00 | Paid           |
++------------+----------------+-----------+--------------------+-------------+----------+---------------------+----------------+----------+----------------+
+12 rows in set (0.00 sec)
+
+mysql> SELECT A.Airline_Name, COUNT(B.Booking_ID) AS Total_Bookings FROM Airlines A JOIN Flights F ON A.Airline_ID = F.Airline_ID JOIN Bookings B ON F.Flight_ID = B.Flight_ID GROUP BY A.Airline_ID, A.Airline_Name ORDER BY Total_Bookings DESC LIMIT 1;
++--------------+----------------+
+| Airline_Name | Total_Bookings |
++--------------+----------------+
+| Air India    |              5 |
++--------------+----------------+
+1 row in set (0.01 sec)
+
+mysql> SELECT CONCAT(P.First_Name, ' ', P.Last_Name) AS Passenger_Name, Pay.Amount FROM Passengers P JOIN Bookings B ON P.Passenger_ID = B.Passenger_ID JOIN Payments Pay ON B.Booking_ID = Pay.Booking_ID WHERE Pay.Amount = (SELECT MAX(Amount) FROM Payments);
++----------------+----------+
+| Passenger_Name | Amount   |
++----------------+----------+
+| Ananya Shah    | 25000.00 |
++----------------+----------+
+1 row in set (0.00 sec)
+
+mysql> SELECT P.Passenger_ID, CONCAT(P.First_Name, ' ', P.Last_Name) AS Passenger_Name, COUNT(B.Booking_ID) AS Total_Bookings FROM Passengers P JOIN Bookings B ON P.Passenger_ID = B.Passenger_ID GROUP BY P.Passenger_ID, P.First_Name, P.Last_Name HAVING COUNT(B.Booking_ID) > 1;
++--------------+----------------+----------------+
+| Passenger_ID | Passenger_Name | Total_Bookings |
++--------------+----------------+----------------+
+|            1 | Rahul Sharma   |              2 |
+|            2 | Priya Patel    |              2 |
++--------------+----------------+----------------+
+2 rows in set (0.00 sec)
